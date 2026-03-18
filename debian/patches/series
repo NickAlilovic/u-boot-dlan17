@@ -1,16 +1,2 @@
-u-boot/0001-feat-add-radxa-cubie-a7s-supports.patch
 u-boot/0002-spl-only-a733-use-ram-as-boot-device.patch
-u-boot/0003-sunxi-a527-radxa-reduce-DDR-clock-frequency.patch
-u-boot/0004-pinctrl-sunxi-add-I2C0-PG8-PG9-pinmux-support-for-A7.patch
-u-boot/0005-defconfig-enable-FDT_FIXUP_PARTITIONS-for-Cubie-A7S.patch
-u-boot/0006-arm64-dts-cubie-a7s-add-I2C-EEPROM-support.patch
-u-boot/0007-drivers-misc-add-RADXA_EEPROM_ID-driver.patch
-u-boot/0008-net-dwc_eth_qos_sunxi-read-MAC-address-from-Radxa-EE.patch
-u-boot/0009-defconfig-enable-RADXA_EEPROM_ID-for-Cubie-A7S.patch
-u-boot/0010-drivers-adc-Add-sunxi-ADC-driver.patch
-u-boot/0011-board-sunxi-Add-Radxa-unified-image-support.patch
-u-boot/0012-configs-cubie-a7s-Enable-ADC-and-unified-image-suppo.patch
-u-boot/0013-include-sunxi_gpio-Add-two-extra-GPIO-bank-definitio.patch
-u-boot/0014-board-sunxi-cubie_board-Initialize-GPIO-state-to-inp.patch
-u-boot/0015-arm-dts-cubie-a7s-Keep-board-ID-detect-power-enabled.patch
-u-boot/0016-drivers-misc-radxa-i2c-eeprom-Fix-macaddr-read-error.patch
+u-boot/0017-Use-kernel-dt-bindings.patch

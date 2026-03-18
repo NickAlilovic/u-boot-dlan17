@@ -1,0 +1,851 @@
+From c4bc35208fa54368260ff06fe98e202837b7723f Mon Sep 17 00:00:00 2001
+From: Nick Alilovic <nickalilovic@gmail.com>
+Date: Fri, 13 Mar 2026 12:05:57 -0400
+Subject: [PATCH] Use kernel dt-bindings
+
+Use kernel dt-bindings
+---
+ arch/arm/dts/sun60i-a733.dtsi                 |  33 +-
+ drivers/clk/sunxi/clk_a733.c 		       |   2 --
+ drivers/clk/sunxi/clk_a733_r.c                |   2 -
+ include/dt-bindings/clock/sun60i-a733-ccu.h   | 463 +++++++++++-------
+ include/dt-bindings/clock/sun60i-a733-r-ccu.h |  29 +-
+ include/dt-bindings/reset/sun60i-a733-ccu.h   | 196 +++++---
+ include/dt-bindings/reset/sun60i-a733-r-ccu.h |  29 +-
+ 7 files changed, 458 insertions(+), 296 deletions(-)
+
+Index: u-boot-dlan17/src/arch/arm/dts/sun60i-a733.dtsi
+===================================================================
+--- u-boot-dlan17.orig/src/arch/arm/dts/sun60i-a733.dtsi
++++ u-boot-dlan17/src/arch/arm/dts/sun60i-a733.dtsi
+@@ -281,17 +281,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-		uart7: serial@2501c00 {
+-			compatible = "snps,dw-apb-uart";
+-			reg = <0x02501c00 0x400>;
+-			interrupts = <GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
+-			reg-shift = <2>;
+-			reg-io-width = <4>;
+-			clocks = <&ccu CLK_BUS_UART7>;
+-			resets = <&ccu RST_BUS_UART7>;
+-			status = "disabled";
+-		};
+-
+ 		gic: interrupt-controller@3400000 {
+ 			compatible = "arm,gic-v3";
+ 			#address-cells = <1>;
+Index: u-boot-dlan17/src//drivers/clk/sunxi/clk_a733.c b/drivers/clk/sunxi/clk_a733.c
+===================================================================
+--- u-boot-dlan17.orig/src/drivers/clk/sunxi/clk_a733.c
++++ u-boot-dlan17/src/drivers/clk/sunxi/clk_a733.c
+@@ -38,8 +38,6 @@ static struct ccu_clk_gate a733_gates[] = {
+ 	[CLK_BUS_OHCI1]		= GATE(0x130c, BIT(0)),
+ 	[CLK_BUS_EHCI0]		= GATE(0x1304, BIT(4)),
+ 	[CLK_BUS_EHCI1]		= GATE(0x130c, BIT(4)),
+-	[CLK_USB_GATE0]		= GATE(0x1304, BIT(8)),
+-	[CLK_USB_GATE1]		= GATE(0x130c, BIT(8)),
+ };
+ 
+ static struct ccu_reset a733_resets[] = {
+Index: u-boot-dlan17/src/drivers/clk/sunxi/clk_a733_r.c
+===================================================================
+--- u-boot-dlan17.orig/src/drivers/clk/sunxi/clk_a733_r.c
++++ u-boot-dlan17/src/drivers/clk/sunxi/clk_a733_r.c
+@@ -11,7 +11,6 @@ static struct ccu_clk_gate a733_r_gates[
+ 	[CLK_R_AHB]             = GATE_DUMMY,
+ 	[CLK_R_APB0]            = GATE_DUMMY,
+ 	[CLK_R_APB1]            = GATE_DUMMY,
+-	[CLK_BUS_R_TWD]         = GATE(0x12c, BIT(0)),
+ 	[CLK_BUS_R_UART0]       = GATE(0x18c, BIT(0)),
+ 	[CLK_BUS_R_I2C0]        = GATE(0x19c, BIT(0)),
+ 	[CLK_BUS_R_I2C1]        = GATE(0x19c, BIT(1)),
+@@ -20,7 +19,6 @@ static struct ccu_clk_gate a733_r_gates[
+ };
+ 
+ static struct ccu_reset a733_r_resets[] = {
+-	[RST_BUS_R_TWD]         = RESET(0x12c, BIT(16)),
+ 	[RST_BUS_R_UART0]       = RESET(0x18c, BIT(16)),
+ 	[RST_BUS_R_I2C0]        = RESET(0x19c, BIT(16)),
+ 	[RST_BUS_R_I2C1]        = RESET(0x19c, BIT(17)),
+Index: u-boot-dlan17/src/include/dt-bindings/clock/sun60i-a733-ccu.h
+===================================================================
+--- u-boot-dlan17.orig/src/include/dt-bindings/clock/sun60i-a733-ccu.h
++++ u-boot-dlan17/src/include/dt-bindings/clock/sun60i-a733-ccu.h
+@@ -1,188 +1,289 @@
+ /* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
+ 
+ #ifndef _DT_BINDINGS_CLK_SUN60I_A733_CCU_H_
+ #define _DT_BINDINGS_CLK_SUN60I_A733_CCU_H_
+ 
+-#define CLK_PLL_DDR0		0
+-#define CLK_PLL_PERIPH0_4X	1
+-#define CLK_PLL_PERIPH0_2X	2
+-#define CLK_PLL_PERIPH0_800M	3
+-#define CLK_PLL_PERIPH0_480M	4
+-#define CLK_PLL_PERIPH0_600M	5
+-#define CLK_PLL_PERIPH0_400M	6
+-#define CLK_PLL_PERIPH0_300M	7
+-#define CLK_PLL_PERIPH0_200M	8
+-#define CLK_PLL_PERIPH0_160M	9
+-#define CLK_PLL_PERIPH0_150M	10
+-#define CLK_PLL_PERIPH1_4X	11
+-#define CLK_PLL_PERIPH1_2X	12
+-#define CLK_PLL_PERIPH1_800M	13
+-#define CLK_PLL_PERIPH1_480M	14
+-#define CLK_PLL_PERIPH1_600M	15
+-#define CLK_PLL_PERIPH1_400M	16
+-#define CLK_PLL_PERIPH1_300M	17
+-#define CLK_PLL_PERIPH1_200M	18
+-#define CLK_PLL_PERIPH1_160M	19
+-#define CLK_PLL_PERIPH1_150M	20
+-#define CLK_PLL_GPU		21
+-#define CLK_PLL_VIDEO0_8X	22
+-#define CLK_PLL_VIDEO0_4X	23
+-#define CLK_PLL_VIDEO0_3X	24
+-#define CLK_PLL_VIDEO1_8X	25
+-#define CLK_PLL_VIDEO1_4X	26
+-#define CLK_PLL_VIDEO1_3X	27
+-#define CLK_PLL_VIDEO2_8X	28
+-#define CLK_PLL_VIDEO2_4X	29
+-#define CLK_PLL_VIDEO2_3X	30
+-#define CLK_PLL_VIDEO3_8X	31
+-#define CLK_PLL_VIDEO3_4X	32
+-#define CLK_PLL_VIDEO3_3X	33
+-#define CLK_PLL_VE		34
++#define CLK_PLL_REF		0
++#define CLK_SYS_24M		1
++#define CLK_PLL_DDR		2
++#define CLK_PLL_PERIPH0_4X	3
++#define CLK_PLL_PERIPH0_2X	4
++#define CLK_PLL_PERIPH0_800M	5
++#define CLK_PLL_PERIPH0_480M	6
++#define CLK_PLL_PERIPH0_600M	7
++#define CLK_PLL_PERIPH0_400M	8
++#define CLK_PLL_PERIPH0_300M	9
++#define CLK_PLL_PERIPH0_200M	10
++#define CLK_PLL_PERIPH0_160M	11
++#define CLK_PLL_PERIPH0_150M	12
++#define CLK_PLL_PERIPH1_4X	13
++#define CLK_PLL_PERIPH1_2X	14
++#define CLK_PLL_PERIPH1_800M	15
++#define CLK_PLL_PERIPH1_480M	16
++#define CLK_PLL_PERIPH1_600M	17
++#define CLK_PLL_PERIPH1_400M	18
++#define CLK_PLL_PERIPH1_300M	19
++#define CLK_PLL_PERIPH1_200M	20
++#define CLK_PLL_PERIPH1_160M	21
++#define CLK_PLL_PERIPH1_150M	22
++#define CLK_PLL_GPU		23
++#define CLK_PLL_VIDEO0_8X	24
++#define CLK_PLL_VIDEO0_4X	25
++#define CLK_PLL_VIDEO0_3X	26
++#define CLK_PLL_VIDEO1_8X	27
++#define CLK_PLL_VIDEO1_4X	28
++#define CLK_PLL_VIDEO1_3X	29
++#define CLK_PLL_VIDEO2_8X	30
++#define CLK_PLL_VIDEO2_4X	31
++#define CLK_PLL_VIDEO2_3X	32
++#define CLK_PLL_VE0		33
++#define CLK_PLL_VE1		34
+ #define CLK_PLL_AUDIO0_4X	35
+-#define CLK_PLL_AUDIO0_2X	36
+-#define CLK_PLL_AUDIO0		37
+-#define CLK_PLL_NPU_4X		38
+-#define CLK_PLL_NPU_2X		39
+-#define CLK_PLL_NPU		40
+-#define CLK_AHB			41
+-#define CLK_APB0		42
+-#define CLK_APB1		43
+-#define CLK_MBUS		44
+-#define CLK_DE			45
+-#define CLK_BUS_DE		46
+-#define CLK_DI			47
+-#define CLK_BUS_DI		48
+-#define CLK_G2D			49
+-#define CLK_BUS_G2D		50
+-#define CLK_GPU			51
+-#define CLK_BUS_GPU		52
+-#define CLK_CE			53
+-#define CLK_BUS_CE		54
+-#define CLK_BUS_CE_SYS		55
+-#define CLK_VE			56
+-#define CLK_BUS_VE		57
+-#define CLK_BUS_DMA		58
+-#define CLK_BUS_MSGBOX		59
+-#define CLK_BUS_SPINLOCK	60
+-#define CLK_HSTIMER0		61
+-#define CLK_HSTIMER1		62
+-#define CLK_HSTIMER2		63
+-#define CLK_HSTIMER3		64
+-#define CLK_HSTIMER4		65
+-#define CLK_HSTIMER5		66
+-#define CLK_BUS_HSTIMER		67
+-#define CLK_BUS_DBG		68
+-#define CLK_BUS_PWM0		69
+-#define CLK_BUS_PWM1		70
+-#define CLK_IOMMU		71
+-#define CLK_BUS_IOMMU		72
+-#define CLK_DRAM		73
+-#define CLK_MBUS_DMA		74
+-#define CLK_MBUS_VE		75
+-#define CLK_MBUS_CE		76
+-#define CLK_MBUS_CSI		77
+-#define CLK_MBUS_ISP		78
+-#define CLK_MBUS_GMAC0		79
+-#define CLK_BUS_DRAM		80
+-#define CLK_NAND0		81
+-#define CLK_NAND1		82
+-#define CLK_BUS_NAND		83
+-#define CLK_MMC0		84
+-#define CLK_MMC1		85
+-#define CLK_MMC2		86
+-#define CLK_BUS_SYSDAP		87
+-#define CLK_BUS_MMC0		88
+-#define CLK_BUS_MMC1		89
+-#define CLK_BUS_MMC2		90
+-#define CLK_BUS_UART0		91
+-#define CLK_BUS_UART1		92
+-#define CLK_BUS_UART2		93
+-#define CLK_BUS_UART3		94
+-#define CLK_BUS_UART4		95
+-#define CLK_BUS_UART5		96
+-#define CLK_BUS_UART6		97
+-#define CLK_BUS_UART7		98
+-#define CLK_BUS_I2C0		99
+-#define CLK_BUS_I2C1		100
+-#define CLK_BUS_I2C2		101
+-#define CLK_BUS_I2C3		102
+-#define CLK_BUS_I2C4		103
+-#define CLK_BUS_I2C5		104
+-#define CLK_BUS_CAN		105
+-#define CLK_SPI0		106
+-#define CLK_SPI1		107
+-#define CLK_SPI2		108
+-#define CLK_SPIFC		109
+-#define CLK_BUS_SPI0		110
+-#define CLK_BUS_SPI1		111
+-#define CLK_BUS_SPI2		112
+-#define CLK_BUS_SPIFC		113
+-#define CLK_GMAC0_PHY		114
+-#define CLK_EMAC1_25M		115
+-#define CLK_BUS_GMAC0		116
+-#define CLK_BUS_GMAC1		117
+-#define CLK_IR_RX		118
+-#define CLK_BUS_IR_RX		119
+-#define CLK_IR_TX		120
+-#define CLK_BUS_IR_TX		121
+-#define CLK_GPADC0		122
+-#define CLK_GPADC1		123
+-#define CLK_BUS_GPADC0		124
+-#define CLK_BUS_GPADC1		125
+-#define CLK_BUS_THS		126
+-#define CLK_USB_OHCI0		127
+-#define CLK_USB_OHCI1		128
+-#define CLK_BUS_OHCI0		129
+-#define CLK_BUS_OHCI1		130
+-#define CLK_BUS_EHCI0		131
+-#define CLK_BUS_EHCI1		132
+-#define CLK_BUS_OTG		133
+-#define CLK_BUS_LRADC		134
+-#define CLK_PCIE_AUX		135
+-#define CLK_BUS_DISPLAY0_TOP	136
+-#define CLK_BUS_DISPLAY1_TOP	137
+-#define CLK_HDMI_24M		138
+-#define CLK_HDMI_CEC_32K	139
+-#define CLK_HDMI_CEC		140
+-#define CLK_BUS_HDMI		141
+-#define CLK_MIPI_DSI0		142
+-#define CLK_MIPI_DSI1		143
+-#define CLK_BUS_MIPI_DSI0	144
+-#define CLK_BUS_MIPI_DSI1	145
+-#define CLK_TCON_LCD0		146
+-#define CLK_TCON_LCD1		147
+-#define CLK_TCON_LCD2		148
+-#define CLK_COMBOPHY_DSI0	149
+-#define CLK_COMBOPHY_DSI1	150
+-#define CLK_BUS_TCON_LCD0	151
+-#define CLK_BUS_TCON_LCD1	152
+-#define CLK_BUS_TCON_LCD2	153
+-#define CLK_TCON_TV0		154
+-#define CLK_TCON_TV1		155
+-#define CLK_BUS_TCON_TV0	156
+-#define CLK_BUS_TCON_TV1	157
+-#define CLK_EDP			158
+-#define CLK_BUS_EDP		159
+-#define CLK_LEDC		160
+-#define CLK_BUS_LEDC		161
+-#define CLK_CSI_TOP		162
+-#define CLK_CSI_MCLK0		163
+-#define CLK_CSI_MCLK1		164
+-#define CLK_CSI_MCLK2		165
+-#define CLK_CSI_MCLK3		166
+-#define CLK_BUS_CSI		167
+-#define CLK_ISP			168
+-#define CLK_DSP			169
+-#define CLK_FANOUT_24M		170
+-#define CLK_FANOUT_12M		171
+-#define CLK_FANOUT_16M		172
+-#define CLK_FANOUT_25M		173
+-#define CLK_FANOUT_27M		174
+-#define CLK_FANOUT_PCLK		175
+-#define CLK_FANOUT0		176
+-#define CLK_FANOUT1		177
+-#define CLK_FANOUT2		178
+-#define CLK_USB_GATE0		179
+-#define CLK_USB_GATE1		180
++#define CLK_PLL_AUDIO1		36
++#define CLK_PLL_AUDIO1_DIV2	37
++#define CLK_PLL_AUDIO1_DIV5	38
++#define CLK_PLL_NPU		39
++#define CLK_PLL_DE		40
++#define CLK_PLL_DE_4X		41
++#define CLK_PLL_DE_3X		42
++#define CLK_AHB			43
++#define CLK_APB0		44
++#define CLK_APB1		45
++#define CLK_APB_UART		46
++#define CLK_TRACE		47
++#define CLK_GIC			48
++#define CLK_CPU_PERI		49
++#define CLK_BUS_ITS_PCIE	50
++#define CLK_NSI			51
++#define CLK_BUS_NSI		52
++#define CLK_MBUS		53
++#define CLK_MBUS_IOMMU0_SYS	54
++#define CLK_APB_IOMMU0_SYS	55
++#define CLK_AHB_IOMMU0_SYS	56
++#define CLK_BUS_MSI_LITE0	57
++#define CLK_BUS_MSI_LITE1	58
++#define CLK_BUS_MSI_LITE2	59
++#define CLK_MBUS_IOMMU1_SYS	60
++#define CLK_APB_IOMMU1_SYS	61
++#define CLK_AHB_IOMMU1_SYS	62
++#define CLK_AHB_VE_DEC		63
++#define CLK_AHB_VE_ENC		64
++#define CLK_AHB_VID_IN		65
++#define CLK_AHB_VID_COUT0	66
++#define CLK_AHB_VID_COUT1	67
++#define CLK_AHB_DE		68
++#define CLK_AHB_NPU		69
++#define CLK_AHB_GPU0		70
++#define CLK_AHB_SERDES		71
++#define CLK_AHB_USB_SYS		72
++#define CLK_AHB_MSI_LITE0	73
++#define CLK_AHB_STORE		74
++#define CLK_AHB_CPUS		75
++#define CLK_MBUS_IOMMU0		76
++#define CLK_MBUS_IOMMU1		77
++#define CLK_MBUS_DESYS		78
++#define CLK_MBUS_VE_ENC_GATE	79
++#define CLK_MBUS_VE_DEC_GATE	80
++#define CLK_MBUS_GPU0		81
++#define CLK_MBUS_NPU		82
++#define CLK_MBUS_VID_IN		83
++#define CLK_MBUS_SERDES		84
++#define CLK_MBUS_MSI_LITE0	85
++#define CLK_MBUS_STORE		86
++#define CLK_MBUS_MSI_LITE2	87
++#define CLK_MBUS_DMA0		88
++#define CLK_MBUS_VE_ENC		89
++#define CLK_MBUS_CE		90
++#define CLK_MBUS_DMA1		91
++#define CLK_MBUS_NAND		92
++#define CLK_MBUS_CSI		93
++#define CLK_MBUS_ISP		94
++#define CLK_MBUS_GMAC0		95
++#define CLK_MBUS_GMAC1		96
++#define CLK_MBUS_VE_DEC		97
++#define CLK_BUS_DMA0		98
++#define CLK_BUS_DMA1		99
++#define CLK_BUS_SPINLOCK	100
++#define CLK_BUS_MSGBOX		101
++#define CLK_BUS_PWM0		102
++#define CLK_BUS_PWM1		103
++#define CLK_BUS_DBG		104
++#define CLK_BUS_SYSDAP		105
++#define CLK_TIMER0		106
++#define CLK_TIMER1		107
++#define CLK_TIMER2		108
++#define CLK_TIMER3		109
++#define CLK_TIMER4		110
++#define CLK_TIMER5		111
++#define CLK_TIMER6		112
++#define CLK_TIMER7		113
++#define CLK_TIMER8		114
++#define CLK_TIMER9		115
++#define CLK_BUS_TIMER		116
++#define CLK_AVS			117
++#define CLK_DE			118
++#define CLK_BUS_DE		119
++#define CLK_DI			120
++#define CLK_BUS_DI		121
++#define CLK_G2D			122
++#define CLK_BUS_G2D		123
++#define CLK_EINK		124
++#define CLK_EINK_PANEL		125
++#define CLK_BUS_EINK		126
++#define CLK_VE_ENC		127
++#define CLK_VE_DEC		128
++#define CLK_BUS_VE_ENC		129
++#define CLK_BUS_VE_DEC		130
++#define CLK_CE			131
++#define CLK_BUS_CE		132
++#define CLK_BUS_CE_SYS		133
++#define CLK_NPU			134
++#define CLK_BUS_NPU		135
++#define CLK_GPU			136
++#define CLK_BUS_GPU		137
++#define CLK_DRAM		138
++#define CLK_BUS_DRAM		139
++#define CLK_NAND0		140
++#define CLK_NAND1		141
++#define CLK_BUS_NAND		142
++#define CLK_MMC0		143
++#define CLK_MMC1		144
++#define CLK_MMC2		145
++#define CLK_MMC3		146
++#define CLK_BUS_MMC0		147
++#define CLK_BUS_MMC1		148
++#define CLK_BUS_MMC2		149
++#define CLK_BUS_MMC3		150
++#define CLK_UFS_AXI		151
++#define CLK_UFS_CFG		152
++#define CLK_BUS_UFS		153
++#define CLK_BUS_UART0		154
++#define CLK_BUS_UART1		155
++#define CLK_BUS_UART2		156
++#define CLK_BUS_UART3		157
++#define CLK_BUS_UART4		158
++#define CLK_BUS_UART5		159
++#define CLK_BUS_UART6		160
++#define CLK_BUS_I2C0		161
++#define CLK_BUS_I2C1		162
++#define CLK_BUS_I2C2		163
++#define CLK_BUS_I2C3		164
++#define CLK_BUS_I2C4		165
++#define CLK_BUS_I2C5		166
++#define CLK_BUS_I2C6		167
++#define CLK_BUS_I2C7		168
++#define CLK_BUS_I2C8		169
++#define CLK_BUS_I2C9		170
++#define CLK_BUS_I2C10		171
++#define CLK_BUS_I2C11		172
++#define CLK_BUS_I2C12		173
++#define CLK_SPI0		174
++#define CLK_SPI1		175
++#define CLK_SPI2		176
++#define CLK_SPI3		177
++#define CLK_SPI4		178
++#define CLK_BUS_SPI0		179
++#define CLK_BUS_SPI1		180
++#define CLK_BUS_SPI2		181
++#define CLK_BUS_SPI3		182
++#define CLK_BUS_SPI4		183
++#define CLK_SPIF		184
++#define CLK_BUS_SPIF		185
++#define CLK_GPADC		186
++#define CLK_BUS_GPADC		187
++#define CLK_BUS_THS		188
++#define CLK_IRRX		189
++#define CLK_BUS_IRRX		190
++#define CLK_IRTX		191
++#define CLK_BUS_IRTX		192
++#define CLK_BUS_LRADC		193
++#define CLK_SGPIO		194
++#define CLK_BUS_SGPIO		195
++#define CLK_LPC			196
++#define CLK_BUS_LPC		197
++#define CLK_I2SPCM0		198
++#define CLK_I2SPCM1		199
++#define CLK_I2SPCM2		200
++#define CLK_I2SPCM3		201
++#define CLK_I2SPCM4		202
++#define CLK_BUS_I2SPCM0		203
++#define CLK_BUS_I2SPCM1		204
++#define CLK_BUS_I2SPCM2		205
++#define CLK_BUS_I2SPCM3		206
++#define CLK_BUS_I2SPCM4		207
++#define CLK_I2SPCM2_ASRC	208
++#define CLK_OWA_TX		209
++#define CLK_OWA_RX		210
++#define CLK_BUS_OWA		211
++#define CLK_DMIC		212
++#define CLK_BUS_DMIC		213
++#define CLK_USB_OHCI0		214
++#define CLK_BUS_OTG		215
++#define CLK_BUS_EHCI0		216
++#define CLK_BUS_OHCI0		217
++#define CLK_USB_OHCI1		218
++#define CLK_BUS_EHCI1		219
++#define CLK_BUS_OHCI1		220
++#define CLK_USB_REF		221
++#define CLK_USB2_U2_REF		222
++#define CLK_USB2_SUSPEND	223
++#define CLK_USB2_MF		224
++#define CLK_USB2_U3_UTMI	225
++#define CLK_USB2_U2_PIPE	226
++#define CLK_PCIE_AUX		227
++#define CLK_PCIE_AXI_SLV	228
++#define CLK_SERDES_PHY		229
++#define CLK_GMAC_PTP		230
++#define CLK_GMAC0_PHY		231
++#define CLK_GMAC1_PHY		232
++#define CLK_BUS_GMAC0		233
++#define CLK_BUS_GMAC1		234
++#define CLK_TCON_LCD0		235
++#define CLK_TCON_LCD1		236
++#define CLK_TCON_LCD2		237
++#define CLK_BUS_TCON_LCD0	238
++#define CLK_BUS_TCON_LCD1	239
++#define CLK_BUS_TCON_LCD2	240
++#define CLK_DSI0		241
++#define CLK_DSI1		242
++#define CLK_BUS_DSI0		243
++#define CLK_BUS_DSI1		244
++#define CLK_COMBPHY0		245
++#define CLK_COMBPHY1		246
++#define CLK_BUS_TCON_TV0	247
++#define CLK_BUS_TCON_TV1	248
++#define CLK_EDP_TV		249
++#define CLK_BUS_EDP_TV		250
++#define CLK_HDMI_CEC_32K	251
++#define CLK_HDMI_CEC		252
++#define CLK_HDMI_TV		253
++#define CLK_BUS_HDMI_TV		254
++#define CLK_HDMI_SFR		255
++#define CLK_HDMI_ESM		256
++#define CLK_BUS_DPSS_TOP0	257
++#define CLK_BUS_DPSS_TOP1	258
++#define CLK_LEDC		259
++#define CLK_BUS_LEDC		260
++#define CLK_BUS_DSC		261
++#define CLK_CSI_MASTER0		262
++#define CLK_CSI_MASTER1		263
++#define CLK_CSI_MASTER2		264
++#define CLK_CSI			265
++#define CLK_BUS_CSI		266
++#define CLK_ISP			267
++#define CLK_APB2JTAG		268
++#define CLK_FANOUT_24M		269
++#define CLK_FANOUT_12M		270
++#define CLK_FANOUT_16M		271
++#define CLK_FANOUT_25M		272
++#define CLK_FANOUT_27M		273
++#define CLK_FANOUT_PCLK		274
++#define CLK_FANOUT0		275
++#define CLK_FANOUT1		276
++#define CLK_FANOUT2		277
++#define CLK_FANOUT3		278
+ 
+ #endif /* _DT_BINDINGS_CLK_SUN60I_A733_CCU_H_ */
+Index: u-boot-dlan17/src/include/dt-bindings/clock/sun60i-a733-r-ccu.h
+===================================================================
+--- u-boot-dlan17.orig/src/include/dt-bindings/clock/sun60i-a733-r-ccu.h
++++ u-boot-dlan17/src/include/dt-bindings/clock/sun60i-a733-r-ccu.h
+@@ -1,4 +1,7 @@
+ /* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
+ 
+ #ifndef _DT_BINDINGS_CLK_SUN60I_A733_R_CCU_H_
+ #define _DT_BINDINGS_CLK_SUN60I_A733_R_CCU_H_
+@@ -9,26 +12,28 @@
+ #define CLK_R_TIMER0		3
+ #define CLK_R_TIMER1		4
+ #define CLK_R_TIMER2		5
+-#define CLK_BUS_R_TIMER		6
+-#define CLK_BUS_R_TWD		7
+-#define CLK_R_PWMCTRL		8
+-#define CLK_BUS_R_PWMCTRL	9
+-#define CLK_R_SPI		10
+-#define CLK_BUS_R_SPI		11
+-#define CLK_BUS_R_SPINLOCK	12
++#define CLK_R_TIMER3		6
++#define CLK_BUS_R_TIMER		7
++#define CLK_BUS_R_TWD		8
++#define CLK_R_PWMCTRL		9
++#define CLK_BUS_R_PWMCTRL	10
++#define CLK_R_SPI		11
++#define CLK_BUS_R_SPI		12
+ #define CLK_BUS_R_MSGBOX	13
+ #define CLK_BUS_R_UART0		14
+ #define CLK_BUS_R_UART1		15
+ #define CLK_BUS_R_I2C0		16
+ #define CLK_BUS_R_I2C1		17
+ #define CLK_BUS_R_I2C2		18
+-#define CLK_BUS_R_PPU0		19
+-#define CLK_BUS_R_PPU1		20
++#define CLK_BUS_R_PPU		19
++#define CLK_BUS_R_TZMA		20
+ #define CLK_BUS_R_CPU_BIST	21
+ #define CLK_R_IR_RX		22
+ #define CLK_BUS_R_IR_RX		23
+-#define CLK_BUS_R_DMA		24
+-#define CLK_BUS_R_RTC		25
+-#define CLK_BUS_R_CPUCFG	26
++#define CLK_BUS_R_RTC		24
++#define CLK_R_RISCV		25
++#define CLK_BUS_R_RISCV		26
++#define CLK_BUS_R_RISCV_CFG	27
++#define CLK_BUS_R_CPUCFG	28
+ 
+ #endif /* _DT_BINDINGS_CLK_SUN60I_A733_R_CCU_H_ */
+Index: u-boot-dlan17/src/include/dt-bindings/reset/sun60i-a733-ccu.h
+===================================================================
+--- u-boot-dlan17.orig/src/include/dt-bindings/reset/sun60i-a733-ccu.h
++++ u-boot-dlan17/src/include/dt-bindings/reset/sun60i-a733-ccu.h
+@@ -1,85 +1,131 @@
+ /* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
+ 
+ #ifndef _DT_BINDINGS_RST_SUN60I_A733_CCU_H_
+ #define _DT_BINDINGS_RST_SUN60I_A733_CCU_H_
+ 
+-#define RST_MBUS		0
++#define RST_BUS_ITS_PCIE	0
+ #define RST_BUS_NSI		1
+-#define RST_BUS_DE		2
+-#define RST_BUS_DI		3
+-#define RST_BUS_G2D		4
+-#define RST_BUS_SYS		5
+-#define RST_BUS_GPU		6
+-#define RST_BUS_CE		7
+-#define RST_BUS_SYS_CE		8
+-#define RST_BUS_VE		9
+-#define RST_BUS_DMA		10
+-#define RST_BUS_MSGBOX		11
+-#define RST_BUS_SPINLOCK	12
+-#define RST_BUS_CPUXTIMER	13
+-#define RST_BUS_DBG		14
++#define RST_BUS_NSI_CFG		2
++#define RST_BUS_IOMMU0_SYS	3
++#define RST_BUS_MSI_LITE0_AHB	4
++#define RST_BUS_MSI_LITE0_MBUS	5
++#define RST_BUS_MSI_LITE1_AHB	6
++#define RST_BUS_MSI_LITE1_MBUS	7
++#define RST_BUS_MSI_LITE2_AHB	8
++#define RST_BUS_MSI_LITE2_MBUS	9
++#define RST_BUS_IOMMU1_SYS	10
++#define RST_BUS_DMA0		11
++#define RST_BUS_DMA1		12
++#define RST_BUS_SPINLOCK	13
++#define RST_BUS_MSGBOX		14
+ #define RST_BUS_PWM0		15
+ #define RST_BUS_PWM1		16
+-#define RST_BUS_DRAM		17
+-#define RST_BUS_NAND		18
+-#define RST_BUS_MMC0		19
+-#define RST_BUS_MMC1		20
+-#define RST_BUS_MMC2		21
+-#define RST_BUS_SYSDAP		22
+-#define RST_BUS_UART0		23
+-#define RST_BUS_UART1		24
+-#define RST_BUS_UART2		25
+-#define RST_BUS_UART3		26
+-#define RST_BUS_UART4		27
+-#define RST_BUS_UART5		28
+-#define RST_BUS_UART6		29
+-#define RST_BUS_UART7		30
+-#define RST_BUS_I2C0		31
+-#define RST_BUS_I2C1		32
+-#define RST_BUS_I2C2		33
+-#define RST_BUS_I2C3		34
+-#define RST_BUS_I2C4		35
+-#define RST_BUS_I2C5		36
+-#define RST_BUS_CAN		37
+-#define RST_BUS_SPI0		38
+-#define RST_BUS_SPI1		39
+-#define RST_BUS_SPI2		40
+-#define RST_BUS_SPIFC		41
+-#define RST_BUS_GMAC0		42
+-#define RST_BUS_GMAC1		43
+-#define RST_BUS_IR_RX		44
+-#define RST_BUS_IR_TX		45
+-#define RST_BUS_GPADC0		46
+-#define RST_BUS_GPADC1		47
+-#define RST_BUS_THS		48
+-#define RST_USB_PHY0		49
+-#define RST_USB_PHY1		50
+-#define RST_BUS_OHCI0		51
+-#define RST_BUS_OHCI1		52
+-#define RST_BUS_EHCI0		53
+-#define RST_BUS_EHCI1		54
+-#define RST_BUS_OTG		55
+-#define RST_BUS_3		56
+-#define RST_BUS_LRADC		57
+-#define RST_BUS_PCIE_USB3	58
+-#define RST_BUS_DISPLAY0_TOP	59
+-#define RST_BUS_DISPLAY1_TOP	60
+-#define RST_BUS_HDMI_MAIN	61
+-#define RST_BUS_HDMI_SUB	62
+-#define RST_BUS_MIPI_DSI0	63
+-#define RST_BUS_MIPI_DSI1	64
+-#define RST_BUS_TCON_LCD0	65
+-#define RST_BUS_TCON_LCD1	66
+-#define RST_BUS_TCON_LCD2	67
+-#define RST_BUS_TCON_TV0	68
+-#define RST_BUS_TCON_TV1	69
+-#define RST_BUS_LVDS0		70
+-#define RST_BUS_LVDS1		71
+-#define RST_BUS_EDP		72
+-#define RST_BUS_VIDEO_OUT0	73
+-#define RST_BUS_VIDEO_OUT1	74
+-#define RST_BUS_LEDC		75
+-#define RST_BUS_CSI		76
+-#define RST_BUS_ISP		77
++#define RST_BUS_DBG		17
++#define RST_BUS_SYSDAP		18
++#define RST_BUS_TIMER0		19
++#define RST_BUS_DE		20
++#define RST_BUS_DI		21
++#define RST_BUS_G2D		22
++#define RST_BUS_EINK		23
++#define RST_BUS_DE_SYS		24
++#define RST_BUS_VE_ENC		25
++#define RST_BUS_VE_DEC		26
++#define RST_BUS_CE		27
++#define RST_BUS_CE_SYS		28
++#define RST_BUS_NPU_CORE	29
++#define RST_BUS_NPU_AXI		30
++#define RST_BUS_NPU_AHB		31
++#define RST_BUS_NPU_SRAM	32
++#define RST_BUS_GPU		33
++#define RST_BUS_DRAM		34
++#define RST_BUS_NAND		35
++#define RST_BUS_MMC0		36
++#define RST_BUS_MMC1		37
++#define RST_BUS_MMC2		38
++#define RST_BUS_MMC3		39
++#define RST_BUS_UFS_AHB		40
++#define RST_BUS_UFS_AXI		41
++#define RST_BUS_UFS_PHY		42
++#define RST_BUS_UFS_CORE	43
++#define RST_BUS_UART0		44
++#define RST_BUS_UART1		45
++#define RST_BUS_UART2		46
++#define RST_BUS_UART3		47
++#define RST_BUS_UART4		48
++#define RST_BUS_UART5		49
++#define RST_BUS_UART6		50
++#define RST_BUS_I2C0		51
++#define RST_BUS_I2C1		52
++#define RST_BUS_I2C2		53
++#define RST_BUS_I2C3		54
++#define RST_BUS_I2C4		55
++#define RST_BUS_I2C5		56
++#define RST_BUS_I2C6		57
++#define RST_BUS_I2C7		58
++#define RST_BUS_I2C8		59
++#define RST_BUS_I2C9		60
++#define RST_BUS_I2C10		61
++#define RST_BUS_I2C11		62
++#define RST_BUS_I2C12		63
++#define RST_BUS_SPI0		64
++#define RST_BUS_SPI1		65
++#define RST_BUS_SPI2		66
++#define RST_BUS_SPIF		67
++#define RST_BUS_SPI3		68
++#define RST_BUS_SPI4		69
++#define RST_BUS_GPADC		70
++#define RST_BUS_THS		71
++#define RST_BUS_IRRX		72
++#define RST_BUS_IRTX		73
++#define RST_BUS_LRADC		74
++#define RST_BUS_SGPIO		75
++#define RST_BUS_LPC		76
++#define RST_BUS_I2SPCM0		77
++#define RST_BUS_I2SPCM1		78
++#define RST_BUS_I2SPCM2		79
++#define RST_BUS_I2SPCM3		80
++#define RST_BUS_I2SPCM4		81
++#define RST_BUS_OWA		82
++#define RST_BUS_DMIC		83
++#define RST_USB_PHY0		84
++#define RST_BUS_OHCI0		85
++#define RST_BUS_EHCI0		86
++#define RST_BUS_OTG		87
++#define RST_USB_PHY1		88
++#define RST_BUS_OHCI1		89
++#define RST_BUS_EHCI1		90
++#define RST_BUS_USB2		91
++#define RST_BUS_PCIE		92
++#define RST_BUS_PCIE_PWRUP	93
++#define RST_BUS_SERDES		94
++#define RST_BUS_GMAC0		95
++#define RST_BUS_GMAC0_AXI	96
++#define RST_BUS_GMAC1		97
++#define RST_BUS_GMAC1_AXI	98
++#define RST_BUS_TCON_LCD0	99
++#define RST_BUS_TCON_LCD1	100
++#define RST_BUS_TCON_LCD2	101
++#define RST_BUS_LVDS0		102
++#define RST_BUS_LVDS1		103
++#define RST_BUS_DSI0		104
++#define RST_BUS_DSI1		105
++#define RST_BUS_TCON_TV0	106
++#define RST_BUS_TCON_TV1	107
++#define RST_BUS_EDP		108
++#define RST_BUS_HDMI_MAIN	109
++#define RST_BUS_HDMI_SUB	110
++#define RST_BUS_HDMI_HDCP	111
++#define RST_BUS_DPSS_TOP0	112
++#define RST_BUS_DPSS_TOP1	113
++#define RST_BUS_VIDEO_OUT0	114
++#define RST_BUS_VIDEO_OUT1	115
++#define RST_BUS_LEDC		116
++#define RST_BUS_DSC		117
++#define RST_BUS_CSI		118
++#define RST_BUS_VIDEO_IN	119
++#define RST_BUS_APB2JTAG	120
+ 
+ #endif /* _DT_BINDINGS_RST_SUN60I_A733_CCU_H_ */
+Index: u-boot-dlan17/src/include/dt-bindings/reset/sun60i-a733-r-ccu.h
+===================================================================
+--- u-boot-dlan17.orig/src/include/dt-bindings/reset/sun60i-a733-r-ccu.h
++++ u-boot-dlan17/src/include/dt-bindings/reset/sun60i-a733-r-ccu.h
+@@ -1,22 +1,23 @@
+ /* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Copyright (C) 2026 Junhui Liu <junhui.liu@pigmoral.tech>
++ */
+ 
+ #ifndef _DT_BINDINGS_RST_SUN60I_A733_R_CCU_H_
+ #define _DT_BINDINGS_RST_SUN60I_A733_R_CCU_H_
+ 
+ #define RST_BUS_R_TIMER		0
+-#define RST_BUS_R_TWD		1
+-#define RST_BUS_R_PWMCTRL	2
+-#define RST_BUS_R_SPI		3
+-#define RST_BUS_R_SPINLOCK	4
+-#define RST_BUS_R_MSGBOX	5
+-#define RST_BUS_R_UART0		6
+-#define RST_BUS_R_UART1		7
+-#define RST_BUS_R_I2C0		8
+-#define RST_BUS_R_I2C1		9
+-#define RST_BUS_R_I2C2		10
+-#define RST_BUS_R_PPU1		11
+-#define RST_BUS_R_IR_RX		12
+-#define RST_BUS_R_RTC		13
+-#define RST_BUS_R_CPUCFG	14
++#define RST_BUS_R_PWM		1
++#define RST_BUS_R_SPI		2
++#define RST_BUS_R_MSGBOX	3
++#define RST_BUS_R_UART0		4
++#define RST_BUS_R_UART1		5
++#define RST_BUS_R_I2C0		6
++#define RST_BUS_R_I2C1		7
++#define RST_BUS_R_I2C2		8
++#define RST_BUS_R_IR_RX		9
++#define RST_BUS_R_RTC		10
++#define RST_BUS_R_RISCV_CFG	11
++#define RST_BUS_R_CPUCFG	12
+ 
+ #endif /* _DT_BINDINGS_RST_SUN60I_A733_R_CCU_H_ */
