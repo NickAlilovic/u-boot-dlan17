@@ -4,6 +4,6 @@
 
 ## Build
 
-1. `git clone --recurse-submodules https://github.com/radxa-pkg/u-boot-dlan17.git`
+1. `git clone --recurse-submodules https://github.com/NickAlilovic/u-boot-dlan17.git`
 2. Open in [`devcontainer`](https://code.visualstudio.com/docs/devcontainers/containers)
 3. `make deb`
