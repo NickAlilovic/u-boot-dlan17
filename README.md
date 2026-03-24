@@ -4,6 +4,6 @@
 
 ## Build
 
-1. `git clone --recurse-submodules https://https://github.com/NickAlilovic/u-boot-dlan17`
+1. `git clone --recurse-submodules https://github.com/NickAlilovic/u-boot-dlan17`
 2. Open in [`devcontainer`](https://code.visualstudio.com/docs/devcontainers/containers)
 3. `make deb`
